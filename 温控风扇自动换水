@@ -1,0 +1,222 @@
+#include <Servo.h>
+#define FAN_SERVO 9
+Servo fanservo;
+// 定义风扇舵机
+int fan = 11;
+//定义风扇接口
+#include <LiquidCrystal.h>
+const int rs = 7, e = 6, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, e, d4, d5, d6, d7);
+//定义液晶显示屏
+int waterF = 12;
+int waterC = 13;
+int wateranimal = 0;
+int pro;
+//定义水泵
+int th = 8;
+//定义温湿度接口
+int n = 0;
+//动物名字变量
+int fit_t, fit_h = 0;
+//动物适宜温度湿度
+void setup() {
+  
+  Serial.begin(9600); //波特率9600
+  fanservo.attach(FAN_SERVO);//舵机
+  pinMode(th, INPUT);//温湿度
+  pinMode(rs, OUTPUT);
+  pinMode(e, OUTPUT);
+  pinMode(d4, OUTPUT);
+  pinMode(d5, OUTPUT);
+  pinMode(d6, OUTPUT);
+  pinMode(d7, OUTPUT);//显示屏
+  pinMode(11, OUTPUT);//风扇控制
+  pinMode(12, OUTPUT);//充水泵
+  pinMode(13, OUTPUT);//排水泵
+  lcd.begin(16, 2);
+  lcd.setCursor(0, 0);
+  lcd.print("  Hello World!");
+  lcd.setCursor(0, 1);
+  lcd.print("  T:  C H:  % ");
+  //初始化lcd屏幕
+}
+void loop() {
+  preparation();
+  //温度传感器采样准备
+  int* result = THreading();
+  //传感器读数
+  name_animals();
+  //判断小动物类型
+  show(result);
+  //lcd屏幕输出
+  fancontrol(result);
+  //风扇控制
+  pro = random(0, 100);
+  watercontrol(wateranimal);
+  //排水控制
+}
+void name_animals()//小动物选择
+{
+  if (Serial.available());
+  Serial.println(n);
+  n = Serial.read();
+  //连接processing
+  if (n == 72)
+  {
+    lcd.setCursor(0, 0);
+    lcd.print("                 ");
+    lcd.setCursor(0, 0);
+    lcd.print(" Hamster Feeding");
+    fit_t = 30; fit_h = 30;
+    wateranimal = 1;
+  }
+  else if (n == 82)
+  {
+    lcd.setCursor(0, 0);
+    lcd.print("                 ");
+    lcd.setCursor(0, 0);
+    lcd.print(" Rabbit Feeding");
+    fit_t = 25; fit_h = 60;
+    wateranimal = 2;
+  }
+  else if (n == 84)
+  {
+    lcd.setCursor(0, 0);
+    lcd.print("                 ");
+    lcd.setCursor(0, 0);
+    lcd.print(" Turtle Feeding");
+    fit_t = 32; fit_h = 50;
+    wateranimal = 3;
+  }
+  //判断小动物种类
+  else
+  {
+    lcd.setCursor(0, 0);
+    lcd.print("                 ");
+    lcd.setCursor(0, 0);
+    lcd.print("  Hello World!");
+  }
+}
+
+void preparation()//温湿度传感器采样准备
+{
+  pinMode(th, OUTPUT);
+  digitalWrite(th, HIGH);  delay(1500);
+  digitalWrite(th, LOW);   delay(30);
+  digitalWrite(th, HIGH);
+  pinMode(th, INPUT);
+}
+
+int* THreading()//温湿度传感器读数
+{
+  int storage[6] = {0, 0, 0, 0, 0, 0};
+  int* result = new int[5];
+  int i, j;
+  delayMicroseconds(40);
+  if (digitalRead(th) == LOW)
+  {
+    while (digitalRead(th) == LOW);
+    delayMicroseconds(100);
+    for (i = 0; i < 5; i++)
+    {
+      for (j = 0; j < 8; j++) //二进制读取
+      {
+        while (digitalRead(th) == LOW);
+        delayMicroseconds(40);
+        if (digitalRead(th) == LOW) storage[i] = storage[i] | 0x00;
+        else
+        {
+          storage[i] = storage[i] | 0x01;
+          delayMicroseconds(40);
+        }
+        if (j < 7) storage[i] = storage[i] << 1;
+      }
+      result[i] = storage[i];
+    }
+  }
+  else
+    for (i = 0; i < 1; i++)
+      result[i] = -1;
+  return result;
+}
+
+void show(int result[])//传感器读数显示
+{
+  digitalWrite(th, HIGH);
+  lcd.setCursor(4, 1);
+  lcd.print(result[2]);
+  lcd.setCursor(10, 1);
+  lcd.print(result[0]);
+  delay(1000);
+}
+
+void fancontrol(int result[])//风扇控制
+{
+  //float t, h;
+  int angle = 0;
+  digitalWrite(11, LOW);
+  //t = result[0] + float(result[1]) / 10;
+  //h = result[2] + float(result[3]) / 10;
+  int t = result[2];
+  int h = result[0];
+  if (t >= fit_t || h <= fit_h) {
+    for (angle = 30; angle <= 150; angle++)
+    {
+      digitalWrite(11, HIGH);
+      fanservo.write(angle);
+      if ( angle >= (90 - abs(t - fit_t)) && angle <= (90 - abs(t + fit_t))) delay(20);
+      else delay(10);
+      digitalWrite(11, LOW);
+    }
+    for (angle = 150; angle >= 30; angle--)
+    {
+      digitalWrite(11, HIGH);
+      delay(20);
+      fanservo.write(angle);
+      if ( angle >= (90 - abs(t - fit_t)) && angle <= (90 - abs(t + fit_t))) delay(20);
+      else delay(10);
+    }
+  }
+}
+void watercontrol(int w)//水泵控制
+{
+  if (w == 1)
+  {
+    if ( pro <= 80 || pro >= 70)
+    {
+      digitalWrite(12, HIGH);
+      delay(2000);
+      digitalWrite(12, LOW);
+    }
+    else if ( pro <= 60 || pro >= 50)
+    {
+      digitalWrite(13, HIGH);
+      delay(1000);
+      digitalWrite(12, LOW);
+    }
+  }
+  if (w == 2)
+  {
+    if ( pro <= 80 || pro >= 70)
+    {
+      digitalWrite(12, HIGH);
+      delay(3000);
+      digitalWrite(12, LOW);
+    }
+    else if ( pro <= 60 || pro >= 50)
+    {
+      digitalWrite(13, HIGH);
+      delay(1200);
+      digitalWrite(12, LOW);
+    }
+  }
+  if (w == 3)
+  {
+    digitalWrite(12, HIGH);
+    delay(5000);
+    digitalWrite(13, HIGH);
+    delay(4000);
+    digitalWrite(12, LOW);
+    digitalWrite(13, LOW);
+  }
+}
