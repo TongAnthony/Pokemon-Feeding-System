@@ -1,0 +1,37 @@
+import processing.serial.*;
+Serial port;
+PImage img;
+void setup()
+{
+  port=new Serial(this, "COM4", 9600); //Arduino板的端口号
+  size(1200, 600);
+  img = loadImage("back.jpg");
+  image(img,0,0);
+}
+
+void draw()
+{
+  pressed();
+}
+
+void pressed()
+{
+  if (keyPressed || mousePressed ) {
+
+    if ((key == 't') || (key == 'T') || (mousePressed & mouseX >=490 && mouseX <=670 && mouseY >=390 && mouseY <=550))
+    {
+      println("T");
+      port.write("T");
+    }
+    if ((key == 'r') || (key == 'R') || (mousePressed & mouseX >=235 && mouseX <=375 && mouseY >=230 && mouseY <=430)) 
+    {
+      println("R");
+      port.write("R");
+    }
+    if ((key == 'h') || (key == 'H') || (mousePressed & mouseX >=700 && mouseX <=840 && mouseY >=255 && mouseY <=365)) 
+    {
+      println("H");
+      port.write("H");
+    }
+  }
+}
