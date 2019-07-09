@@ -1,7 +1,7 @@
 #include <Servo.h>
 #define FAN_SERVO 9
 Servo fanservo;
-// 定义风扇舵机
+// 定义风扇舵机 
 int fan = 11;
 //定义风扇接口
 #include <LiquidCrystal.h>
