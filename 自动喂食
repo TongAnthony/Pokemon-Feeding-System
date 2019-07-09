@@ -1,0 +1,131 @@
+#include <LiquidCrystal.h>
+#include <Keypad.h>
+#define uchar unsigned char
+#include <Servo.h>
+#define FEED_SERVO 10
+Servo feedservo;
+// 定义喂食舵机
+char key1;
+char key2;
+long s;
+//键盘录入变量
+LiquidCrystal lcd(A0, A1, A2, A3, A4, A5);
+//lcd屏幕
+const byte ROWS = 4;
+const byte COLS = 4;
+char keys[ROWS][COLS] =
+{
+  {'1', '2', '3', 'A'},
+  {'4', '5', '6', 'B'},
+  {'7', '8', '9', 'C'},
+  {'*', '0', '#', 'D'}
+};
+byte rowPins[ROWS] = {11, 8, 7, 6};
+byte colPins[COLS] = {5, 4, 3, 2};
+Keypad kpd = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
+//定义数字键盘
+void setup()
+{
+  Serial.begin(9600);
+  feedservo.attach(FEED_SERVO);
+  lcd.begin(16, 2);
+  pinMode(A0, OUTPUT);
+  pinMode(A1, OUTPUT);
+  pinMode(A2, OUTPUT);
+  pinMode(A3, OUTPUT);
+  pinMode(A4, OUTPUT);
+  pinMode(A5, OUTPUT);
+  feedservo.write(0); 
+}
+void feed()//喂食舵机
+{
+  feedservo.write(1000);
+  delay(2000);
+  feedservo.write(0);
+}
+void waiting()//时间延迟
+{
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Please Wait For");
+  lcd.setCursor(0, 1);
+  lcd.print("  h   min");
+  lcd.setCursor(0, 1);
+  lcd.print(s / 60);
+  lcd.setCursor(4, 1);
+  lcd.print(s % 60);
+  delay(s * 1000 * 60);
+}
+void setFeedingTime()//时间输入
+{
+  int hour[3] = {0, 0, 0};
+  int minute[3] = {0, 0, 0};
+  int h;
+  int m;
+  h = 0; m = 0;
+  s = 0;
+  lcd.clear();
+  while (1) {
+    lcd.setCursor(0, 0);
+    lcd.print("set feedingtime");
+    delay(10);
+    key1 = kpd.getKey();
+    if (key1 != NO_KEY) break;
+    //delay(2000);
+  }
+  lcd.clear();
+  lcd.print("Hour:");
+  lcd.setCursor(5, 0);
+  delay(1000);
+  while (1) {
+    key1 = kpd.getKey();
+    if (key1 != NO_KEY) {
+      lcd.print(key1);
+      hour[h] = int(key1) - 48;
+      Serial.print(hour[h]);
+      Serial.print("   ");
+      Serial.print(h);
+      Serial.print("   ");
+      h++;
+      delay(500);
+    }
+    if (key1 == 'D')
+    {
+      break;
+    }
+  }//小时输入
+  lcd.setCursor(0, 1);
+  lcd.print("Minute:");
+  lcd.setCursor(7, 1);
+  while (1) {
+    key2 = kpd.getKey();
+    if (key2 != NO_KEY) {
+      lcd.print(key2);
+      minute[m] = int(key2) - 48;
+      Serial.print(minute[m]);
+      Serial.print("   ");
+      Serial.print(m);
+      Serial.print("   ");
+      m++;
+      delay(500);
+    }
+    if (key2 == 'D')
+    {
+      break;
+    }
+  }//分钟输入
+  if (hour[1] != 20)
+    s = s + 60 * (hour[0] * 10 + hour[1]);
+  else s = s + hour[0] * 60;
+  if (minute[1] != 20)
+    s = s + (minute[0] * 10 + minute[1]);
+  else s = s + minute[0];
+  Serial.print(s);
+  return s;//总时间输出
+}
+void loop()
+{
+  setFeedingTime();
+  waiting();
+  feed();
+}
