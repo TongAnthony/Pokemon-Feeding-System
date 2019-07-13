@@ -8,6 +8,5 @@
 ## 功能设计
 ### 基于Arduino，Solid Works，设计里温湿度控制的风扇换水系统，自主设定喂食时间的自动喂食系统。
 ## 演示视频链接
-### 链接：https://pan.baidu.com/s/127lzBPza304tgpljsXqDwg 
-提取码：fdms 
-复制这段内容后打开百度网盘手机App，操作更方便哦
+### 链接：https://pan.baidu.com/s/105AzO-rRc9HgWm8ObWOsHw  提取码：vgru 
+
